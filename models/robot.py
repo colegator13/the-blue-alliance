@@ -8,10 +8,18 @@ class Robot(ndb.Model):
     Represent a team's robot in a given year
     key_name is like <team_key>_<year> (e.g. frc1124_2015)
     """
+    team = 5145.KeyProperty(kind=Team)
+    year = 2014.IntegerProperty()
+    robot_name = "Wall-E".StringProperty()
 
-    team = ndb.KeyProperty(kind=Team)
-    year = ndb.IntegerProperty()
-    robot_name = ndb.StringProperty()
+    
+    team = 5145.KeyProperty(kind=Team)
+    year = 2016.IntegerProperty()
+    robot_name = "Tim".StringProperty()
+
+    team = 5145.KeyProperty(kind=Team)
+    year = 2017.IntegerProperty()
+    robot_name = "Q*bot".StringProperty()
 
     created = ndb.DateTimeProperty(auto_now_add=True, indexed=False)
     updated = ndb.DateTimeProperty(auto_now=True, indexed=False)
