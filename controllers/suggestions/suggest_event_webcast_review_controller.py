@@ -2,6 +2,7 @@ import datetime
 import os
 import logging
 
+from google.appengine.ext import deferred
 from google.appengine.ext import ndb
 from google.appengine.ext.webapp import template
 
@@ -26,10 +27,14 @@ class SuggestEventWebcastReviewController(SuggestionsReviewBaseController):
         webcast["channel"] = self.request.get("webcast_channel")
         if self.request.get("webcast_file"):
             webcast["file"] = self.request.get("webcast_file")
+        if self.request.get('webcast_date'):
+            webcast['date'] = self.request.get('webcast_date')
 
         event = Event.get_by_id(self.request.get("event_key"))
-        EventWebcastAdder.add_webcast(event, webcast)
-        MemcacheWebcastFlusher.flush()
+        # Defer because of transactions
+        deferred.defer(EventWebcastAdder.add_webcast, event, webcast)
+        deferred.defer(MemcacheWebcastFlusher.flush)
+        return True
 
     """
     View the list of suggestions.
@@ -72,6 +77,7 @@ class SuggestEventWebcastReviewController(SuggestionsReviewBaseController):
 
         elif self.request.get("verdict") == "reject":
             suggestion_key = self.request.get("suggestion_key")
+            suggestion_key = int(suggestion_key) if suggestion_key.isdigit() else suggestion_key
             self._process_rejected(suggestion_key)
             self.redirect("/suggest/event/webcast/review?success=reject")
             return

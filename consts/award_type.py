@@ -86,8 +86,9 @@ class AwardType(object):
     GOLDEN_CORNDOG = 66
     MOST_IMPROVED_TEAM = 67
     WILDCARD = 68
+    CHAIRMANS_FINALIST = 69
 
-    BLUE_BANNER_AWARDS = {CHAIRMANS, WINNER, WOODIE_FLOWERS}
+    BLUE_BANNER_AWARDS = {CHAIRMANS, CHAIRMANS_FINALIST, WINNER, WOODIE_FLOWERS}
     INDIVIDUAL_AWARDS = {WOODIE_FLOWERS, DEANS_LIST, VOLUNTEER, FOUNDERS,
                          BART_KAMEN_MEMORIAL, MAKE_IT_LOUD}
     NON_JUDGED_NON_TEAM_AWARDS = {  # awards not used in the district point model
@@ -97,11 +98,15 @@ class AwardType(object):
         VOLUNTEER,
         WINNER,
         FINALIST,
+        WILDCARD,
     }
 
     normalized_name = {
         CHAIRMANS: {
             None: "Chairman's Award",
+        },
+        CHAIRMANS_FINALIST: {
+            None: "Chairman's Award Finalist",
         },
         WINNER: {
             None: "Winner",
@@ -114,6 +119,7 @@ class AwardType(object):
 
     SEARCHABLE = {  # Only searchable awards. Obscure & old awards not listed
         CHAIRMANS: 'Chairman\'s',
+        CHAIRMANS_FINALIST: 'Chairman\'s Finalist',
         ENGINEERING_INSPIRATION: 'Engineering Inspiration',
         COOPERTITION: 'Coopertition',
         CREATIVITY: 'Creativity',

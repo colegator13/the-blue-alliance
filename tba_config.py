@@ -28,8 +28,10 @@ if DEBUG:
         "memcache": False,
         "database_query_cache": False,
         "response_cache": False,
-        "firebase-url": "https://thebluealliance-dev.firebaseio.com/{}.json?auth={}",
+        "firebase-url": "https://thebluealliance-dev.firebaseio.com/{}.json?print=silent&auth={}",
+        "firebase-push": False,
         "use-compiled-templates": False,
+        "save-frc-api-response": False,
     }
 else:
     CONFIG = {
@@ -37,9 +39,15 @@ else:
         "memcache": True,
         "database_query_cache": True,
         "response_cache": True,
-        "firebase-url": "https://thebluealliance.firebaseio.com/{}.json?auth={}",
-        "use-compiled-templates": True
+        "firebase-url": "https://tbatv-prod-hrd.firebaseio.com/{}.json?print=silent&auth={}",
+        "firebase-push": True,
+        "use-compiled-templates": True,
+        "save-frc-api-response": True,
     }
 
+<<<<<<< HEAD
 CONFIG['landing_handler'] = BUILDSEASON
+=======
+CONFIG['landing_handler'] = INSIGHTS
+>>>>>>> the-blue-alliance/master
 CONFIG["static_resource_version"] = 8

@@ -20,6 +20,7 @@ from helpers.event_details_manipulator import EventDetailsManipulator
 from helpers.event_team_manipulator import EventTeamManipulator
 from helpers.match_helper import MatchHelper
 from helpers.match_manipulator import MatchManipulator
+from helpers.rankings_helper import RankingsHelper
 
 from models.award import Award
 from models.event import Event
@@ -177,12 +178,12 @@ class ApiTrustedEventRankingsUpdate(ApiTrustedBaseController):
     def _process_request(self, request, event_key):
         rankings = JSONRankingsParser.parse(request.body)
 
-        event = Event.get_by_id(event_key)
-
         event_details = EventDetails(
             id=event_key,
             rankings=rankings
         )
+        if event_details.year >= 2017:  # TODO: Temporary fix. Should directly parse request into rankings2
+            event_details.rankings2 = RankingsHelper.convert_rankings(event_details)
         EventDetailsManipulator.createOrUpdate(event_details)
 
         self.response.out.write(json.dumps({'Success': "Rankings successfully updated"}))

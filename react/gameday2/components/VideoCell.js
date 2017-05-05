@@ -1,13 +1,11 @@
 import React, { PropTypes } from 'react'
 import RaisedButton from 'material-ui/RaisedButton'
-import EmbedUstream from './EmbedUstream'
-import EmbedYoutube from './EmbedYoutube'
-import EmbedTwitch from './EmbedTwitch'
+import WebcastEmbed from './WebcastEmbed'
 import VideoCellToolbarContainer from '../containers/VideoCellToolbarContainer'
-import WebcastSelectionOverlayDialogContainer from '../containers/WebcastSelectionOverlayDialogContainer'
-import SwapPositionOverlayDialogContainer from '../containers/SwapPositionOverlayDialogContainer'
+import WebcastSelectionDialogContainer from '../containers/WebcastSelectionDialogContainer'
+import SwapPositionDialogContainer from '../containers/SwapPositionDialogContainer'
 import { webcastPropType } from '../utils/webcastUtils'
-import { LAYOUT_STYLES } from '../constants/LayoutConstants'
+import { LAYOUT_STYLES, NUM_VIEWS_FOR_LAYOUT } from '../constants/LayoutConstants'
 
 export default class VideoCell extends React.Component {
   static propTypes = {
@@ -17,6 +15,7 @@ export default class VideoCell extends React.Component {
     layoutId: PropTypes.number.isRequired,
     position: PropTypes.number.isRequired,
     addWebcastAtPosition: PropTypes.func.isRequired,
+    swapWebcasts: PropTypes.func.isRequired,
   }
 
   constructor(props) {
@@ -25,6 +24,16 @@ export default class VideoCell extends React.Component {
     this.state = {
       webcastSelectionDialogOpen: false,
       swapPositionDialogOpen: false,
+    }
+  }
+
+  onRequestSwapPosition() {
+    const numViewsInLayout = NUM_VIEWS_FOR_LAYOUT[this.props.layoutId]
+    if (numViewsInLayout === 2) {
+      // It doesn't matter which position we are
+      this.props.swapWebcasts(0, 1)
+    } else {
+      this.onRequestOpenSwapPositionDialog()
     }
   }
 
@@ -56,22 +65,6 @@ export default class VideoCell extends React.Component {
     })
 
     if (this.props.webcast) {
-      let cellEmbed
-      switch (this.props.webcast.type) {
-        case 'ustream':
-          cellEmbed = (<EmbedUstream webcast={this.props.webcast} />)
-          break
-        case 'youtube':
-          cellEmbed = (<EmbedYoutube webcast={this.props.webcast} />)
-          break
-        case 'twitch':
-          cellEmbed = (<EmbedTwitch webcast={this.props.webcast} />)
-          break
-        default:
-          cellEmbed = ''
-          break
-      }
-
       const toolbarStyle = {
         position: 'absolute',
         bottom: 0,
@@ -83,20 +76,21 @@ export default class VideoCell extends React.Component {
         <div
           style={cellStyle}
         >
-          {cellEmbed}
+          <WebcastEmbed webcast={this.props.webcast} />
           <VideoCellToolbarContainer
             style={toolbarStyle}
             webcast={this.props.webcast}
-            onRequestOpenWebcastSelectionDialog={() => this.onRequestOpenWebcastSelectionDialog()}
-            onRequestOpenSwapPositionDialog={() => this.onRequestOpenSwapPositionDialog()}
+            isBlueZone={this.props.webcast.key === 'bluezone'}
+            onRequestSelectWebcast={() => this.onRequestOpenWebcastSelectionDialog()}
+            onRequestSwapPosition={() => this.onRequestSwapPosition()}
           />
-          <WebcastSelectionOverlayDialogContainer
+          <WebcastSelectionDialogContainer
             open={this.state.webcastSelectionDialogOpen}
             webcast={this.props.webcast}
             onRequestClose={() => this.onRequestCloseWebcastSelectionDialog()}
             onWebcastSelected={(webcastId) => this.onWebcastSelected(webcastId)}
           />
-          <SwapPositionOverlayDialogContainer
+          <SwapPositionDialogContainer
             open={this.state.swapPositionDialogOpen}
             position={this.props.position}
             onRequestClose={() => this.onRequestCloseSwapPositionDialog()}
@@ -133,7 +127,7 @@ export default class VideoCell extends React.Component {
             onTouchTap={() => this.onRequestOpenWebcastSelectionDialog()}
           />
         </div>
-        <WebcastSelectionOverlayDialogContainer
+        <WebcastSelectionDialogContainer
           open={this.state.webcastSelectionDialogOpen}
           webcast={this.props.webcast}
           onRequestClose={() => this.onRequestCloseWebcastSelectionDialog()}

@@ -32,11 +32,12 @@ class EventManipulator(ManipulatorBase):
         To run after models have been updated
         """
         for (event, updated_attrs) in zip(events, updated_attr_list):
-            try:
-                LocationHelper.update_event_location(event)
-            except Exception, e:
-                logging.error("update_event_location for {} errored!".format(event.key.id()))
-                logging.exception(e)
+            # Disabled due to unreliability. 2017-01-24 -fangeugene
+            # try:
+            #     LocationHelper.update_event_location(event)
+            # except Exception, e:
+            #     logging.error("update_event_location for {} errored!".format(event.key.id()))
+            #     logging.exception(e)
 
             try:
                 if event.normalized_location and event.normalized_location.lat_lng:
@@ -71,6 +72,7 @@ class EventManipulator(ManipulatorBase):
             "event_short",
             "event_type_enum",
             "event_district_enum",
+            "district_key",
             "custom_hashtag",
             "facebook_eid",
             "first_eid",
@@ -78,6 +80,8 @@ class EventManipulator(ManipulatorBase):
             "state_prov",
             "country",
             "postalcode",
+            "parent_event",
+            "playoff_type",
             "normalized_location",  # Overwrite whole thing as one
             "timezone_id",
             "name",
@@ -91,12 +95,18 @@ class EventManipulator(ManipulatorBase):
             "year"
         ]
 
-        list_attrs = []
+        allow_none_attrs = {
+            'district_key'
+        }
+
+        list_attrs = [
+            "divisions",
+        ]
 
         old_event._updated_attrs = []
 
         for attr in attrs:
-            if getattr(new_event, attr) is not None:
+            if getattr(new_event, attr) is not None or attr in allow_none_attrs:
                 if getattr(new_event, attr) != getattr(old_event, attr):
                     setattr(old_event, attr, getattr(new_event, attr))
                     old_event._updated_attrs.append(attr)

@@ -3,6 +3,7 @@ from google.appengine.ext import ndb
 from consts.district_type import DistrictType
 from database.database_query import DatabaseQuery
 from database.dict_converters.event_converter import EventConverter
+from models.district import District
 from models.event import Event
 from models.event_team import EventTeam
 from models.team import Team
@@ -33,19 +34,15 @@ class EventListQuery(DatabaseQuery):
 
 
 class DistrictEventsQuery(DatabaseQuery):
-    CACHE_VERSION = 1
+    CACHE_VERSION = 2
     CACHE_KEY_FORMAT = 'district_events_{}'  # (district_key)
     DICT_CONVERTER = EventConverter
 
     @ndb.tasklet
     def _query_async(self):
         district_key = self._query_args[0]
-        year = int(district_key[:4])
-        district_abbrev = district_key[4:]
-        district_type = DistrictType.abbrevs.get(district_abbrev, None)
         events = yield Event.query(
-            Event.event_district_enum == district_type,
-            Event.year == year).fetch_async()
+            Event.district_key == ndb.Key(District, district_key)).fetch_async()
         raise ndb.Return(events)
 
 
@@ -78,3 +75,16 @@ class TeamYearEventsQuery(DatabaseQuery):
         event_keys = map(lambda event_team: event_team.event, event_teams)
         events = yield ndb.get_multi_async(event_keys)
         raise ndb.Return(events)
+
+
+class EventDivisionsQuery(DatabaseQuery):
+    CACHE_VERSION = 1
+    CACHE_KEY_FORMAT = "event_divisions_{}"  # (event_key)
+    DICT_CONVERTER = EventConverter
+
+    @ndb.tasklet
+    def _query_async(self):
+        event_key = self._query_args[0]
+        event = yield Event.get_by_id_async(event_key)
+        divisions = yield ndb.get_multi_async(event.divisions)
+        raise ndb.Return(divisions)

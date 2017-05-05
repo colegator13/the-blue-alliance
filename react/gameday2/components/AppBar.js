@@ -31,14 +31,23 @@ const AppBar = (props) => {
   const appBarTitleStyle = {
     color: props.muiTheme.appBar.textColor,
     fontSize: '24px',
-    paddingRight: 0,
+    overflow: 'visible',
+  }
+
+  const appBarSubtitleStyle = {
+    color: props.muiTheme.appBar.textColor,
+    textDecoration: 'none',
+    fontSize: 12,
   }
 
   const vexProStyle = {
     color: props.muiTheme.appBar.textColor,
     textDecoration: 'none',
     marginLeft: 32,
+    marginRight: 64,
     fontSize: 12,
+    display: 'flex',
+    alignItems: 'center',
   }
 
   const tbaBrandingButton = (
@@ -73,17 +82,24 @@ const AppBar = (props) => {
         <ToolbarGroup firstChild>
           {tbaBrandingButton}
           <ToolbarTitle text="GameDay" style={appBarTitleStyle} />
-          <a
-            style={vexProStyle}
-            href="https://www.vexrobotics.com/vexpro/"
-          >
-            <span>POWERED BY </span>
+          <a style={appBarSubtitleStyle} href="/">by The Blue Alliance</a>
+          <a style={vexProStyle} href="https://www.vexrobotics.com/vexpro/" >
+            <span style={{ marginRight: '4px' }}>POWERED BY</span>
             <img
               src="/images/vexpro_horiz.png"
               alt="vexPRO"
               height={16}
             />
           </a>
+          <div
+            className="fb-like"
+            data-href="https://www.facebook.com/thebluealliance/"
+            data-layout="button_count"
+            data-action="like"
+            data-size="small"
+            data-show-faces="false"
+            data-share="false"
+          />
         </ToolbarGroup>
         <ToolbarGroup lastChild>
           {configureLayoutButton}

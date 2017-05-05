@@ -3,6 +3,7 @@ import collections
 import datetime
 import re
 
+from google.appengine.api import memcache
 from google.appengine.ext import ndb
 
 from consts.district_type import DistrictType
@@ -45,7 +46,7 @@ class EventHelper(object):
                     team_points[alliance['picks'][2]] = n * multiplier
         except Exception, e:
             # Log only if this matters
-            if event.event_district_enum != DistrictType.NO_DISTRICT:
+            if event.district_key is not None:
                 logging.error("Alliance points calc for {} errored!".format(event.key.id()))
                 logging.exception(e)
 
@@ -71,7 +72,7 @@ class EventHelper(object):
                     to_return[champs_label].append(event)
                 else:
                     to_return[champs_label] = [event]
-            elif event.official and event.event_type_enum in {EventType.REGIONAL, EventType.DISTRICT, EventType.DISTRICT_CMP}:
+            elif event.official and event.event_type_enum in {EventType.REGIONAL, EventType.DISTRICT, EventType.DISTRICT_CMP_DIVISION, EventType.DISTRICT_CMP}:
                 if (event.start_date is None or
                    (event.start_date.month == 12 and event.start_date.day == 31)):
                     weekless_events.append(event)
@@ -170,6 +171,10 @@ class EventHelper(object):
         OR
         b) The event.start_date is on or within 4 days after the closest Wednesday
         """
+        event_keys = memcache.get('EventHelper.getWeekEvents():event_keys')
+        if event_keys is not None:
+            return ndb.get_multi(event_keys)
+
         today = datetime.datetime.today()
 
         # Make sure all events to be returned are within range
@@ -193,16 +198,18 @@ class EventHelper(object):
                     events.append(event)
 
         EventHelper.sort_events(events)
+        memcache.set('EventHelper.getWeekEvents():event_keys', [e.key for e in events], 60*60)
         return events
 
     @classmethod
     def getEventsWithinADay(self):
-        week_events = self.getWeekEvents()
-        ret = []
-        for event in week_events:
-            if event.within_a_day:
-                ret.append(event)
-        return ret
+        event_keys = memcache.get('EventHelper.getEventsWithinADay():event_keys')
+        if event_keys is not None:
+            return ndb.get_multi(event_keys)
+
+        events = filter(lambda e: e.within_a_day, self.getWeekEvents())
+        memcache.set('EventHelper.getEventsWithinADay():event_keys', [e.key for e in events], 60*60)
+        return events
 
     @classmethod
     def getShortName(self, name_str):
@@ -213,7 +220,7 @@ class EventHelper(object):
         See https://github.com/the-blue-alliance/the-blue-alliance-android/blob/master/android/src/test/java/com/thebluealliance/androidclient/test/helpers/EventHelperTest.java
         """
         # 2015+ districts
-        re_string = '(?:' + '|'.join(DistrictType.abbrevs.keys()).upper() + ') District -(.+)'
+        re_string = '(?:[A-Z]+ District -(.+))'
         match = re.match(re_string, name_str)
         if match:
             partial = match.group(1).strip()
@@ -246,7 +253,7 @@ class EventHelper(object):
         return district if district != DistrictType.NO_DISTRICT else DistrictType.abbrevs.get(district_name_str, DistrictType.NO_DISTRICT)
 
     @classmethod
-    def getDistrictFromEventName(cls, event_name):
+    def getDistrictEnumFromEventName(cls, event_name):
         for abbrev, district_type in DistrictType.abbrevs.items():
             if '{} district'.format(abbrev) in event_name.lower():
                 return district_type
@@ -256,6 +263,18 @@ class EventHelper(object):
                 return district_type
 
         return DistrictType.NO_DISTRICT
+
+    @classmethod
+    def getDistrictKeyFromEventName(cls, event_name, year_districts_future):
+        year_districts = year_districts_future.get_result()
+        for district in year_districts:
+            if '{} district'.format(district.abbreviation) in event_name.lower():
+                return district.key
+
+            if district.elasticsearch_name and district.elasticsearch_name in event_name:
+                return district.key
+
+        return None
 
     @classmethod
     def parseEventType(self, event_type_str):
@@ -283,6 +302,8 @@ class EventHelper(object):
         if ('district' in event_type_str) or ('state' in event_type_str)\
            or ('region' in event_type_str) or ('qualif' in event_type_str):
             if 'championship' in event_type_str:
+                if 'division' in event_type_str:
+                    return EventType.DISTRICT_CMP_DIVISION
                 return EventType.DISTRICT_CMP
             else:
                 return EventType.DISTRICT

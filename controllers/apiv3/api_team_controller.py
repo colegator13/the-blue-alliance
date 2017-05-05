@@ -1,3 +1,4 @@
+import datetime
 import json
 
 from google.appengine.ext import ndb
@@ -10,6 +11,8 @@ from database.match_query import TeamEventMatchesQuery, TeamYearMatchesQuery
 from database.media_query import TeamYearMediaQuery, TeamSocialMediaQuery
 from database.team_query import TeamQuery, TeamListQuery, TeamListYearQuery, TeamParticipationQuery, TeamDistrictsQuery
 from database.robot_query import TeamRobotsQuery
+from helpers.event_team_status_helper import EventTeamStatusHelper
+from models.event_team import EventTeam
 from models.team import Team
 
 
@@ -22,7 +25,7 @@ class ApiTeamListController(ApiBaseController):
     etc.
     """
     CACHE_VERSION = 0
-    CACHE_HEADER_LENGTH = 60 * 60 * 24
+    CACHE_HEADER_LENGTH = 61
     PAGE_SIZE = 500
 
     def _track_call(self, page_num, year=None, model_type=None):
@@ -45,7 +48,7 @@ class ApiTeamListController(ApiBaseController):
 
 class ApiTeamController(ApiBaseController):
     CACHE_VERSION = 0
-    CACHE_HEADER_LENGTH = 60 * 60 * 24
+    CACHE_HEADER_LENGTH = 61
 
     def _track_call(self, team_key, model_type=None):
         action = 'team'
@@ -63,7 +66,7 @@ class ApiTeamController(ApiBaseController):
 
 class ApiTeamYearsParticipatedController(ApiBaseController):
     CACHE_VERSION = 0
-    CACHE_HEADER_LENGTH = 60 * 60 * 24
+    CACHE_HEADER_LENGTH = 61
 
     def _track_call(self, team_key):
         self._track_call_defer('team/years_participated', team_key)
@@ -80,7 +83,7 @@ class ApiTeamHistoryDistrictsController(ApiBaseController):
     Returns a JSON list of all DistrictTeam models associated with a Team
     """
     CACHE_VERSION = 0
-    CACHE_HEADER_LENGTH = 60 * 60 * 24
+    CACHE_HEADER_LENGTH = 61
 
     def _track_call(self, team_key):
         self._track_call_defer('team/history/districts', team_key)
@@ -96,7 +99,7 @@ class ApiTeamHistoryRobotsController(ApiBaseController):
     Returns a JSON list of all robot models associated with a Team
     """
     CACHE_VERSION = 0
-    CACHE_HEADER_LENGTH = 60 * 60 * 24
+    CACHE_HEADER_LENGTH = 61
 
     def _track_call(self, team_key):
         self._track_call_defer('team/history/robots', team_key)
@@ -109,7 +112,7 @@ class ApiTeamHistoryRobotsController(ApiBaseController):
 
 class ApiTeamEventsController(ApiBaseController):
     CACHE_VERSION = 0
-    CACHE_HEADER_LENGTH = 60 * 60 * 24
+    CACHE_HEADER_LENGTH = 61
 
     def _track_call(self, team_key, year=None, model_type=None):
         api_label = team_key
@@ -179,9 +182,33 @@ class ApiTeamEventAwardsController(ApiBaseController):
         return json.dumps(awards, ensure_ascii=True, indent=2, sort_keys=True)
 
 
+class ApiTeamEventStatusController(ApiBaseController):
+    CACHE_VERSION = 0
+    CACHE_HEADER_LENGTH = 61
+
+    def _track_call(self, team_key, event_key):
+        self._track_call_defer('team/event/status', '{}/{}'.format(team_key, event_key))
+
+    def _render(self, team_key, event_key):
+        event_team = EventTeam.get_by_id('{}_{}'.format(event_key, team_key))
+        status = None
+        if event_team:
+            status = event_team.status
+            self._last_modified = event_team.updated
+        else:
+            self._last_modified = datetime.datetime.now()
+        if status:
+            status.update({
+                'alliance_status_str': EventTeamStatusHelper.generate_team_at_event_alliance_status_string(team_key, status),
+                'playoff_status_str': EventTeamStatusHelper.generate_team_at_event_playoff_status_string(team_key, status),
+                'overall_status_str': EventTeamStatusHelper.generate_team_at_event_status_string(team_key, status),
+            })
+        return json.dumps(status, ensure_ascii=True, indent=2, sort_keys=True)
+
+
 class ApiTeamYearAwardsController(ApiBaseController):
     CACHE_VERSION = 0
-    CACHE_HEADER_LENGTH = 60 * 60
+    CACHE_HEADER_LENGTH = 61
 
     def _track_call(self, team_key, year):
         self._track_call_defer('team/year/awards', '{}/{}'.format(team_key, year))
@@ -210,7 +237,7 @@ class ApiTeamHistoryAwardsController(ApiBaseController):
 
 class ApiTeamYearMediaController(ApiBaseController):
     CACHE_VERSION = 0
-    CACHE_HEADER_LENGTH = 60 * 60 * 24
+    CACHE_HEADER_LENGTH = 61
 
     def _track_call(self, team_key, year):
         api_label = team_key
@@ -225,7 +252,7 @@ class ApiTeamYearMediaController(ApiBaseController):
 
 class ApiTeamSocialMediaController(ApiBaseController):
     CACHE_VERSION = 0
-    CACHE_HEADER_LENGTH = 60 * 60 * 24
+    CACHE_HEADER_LENGTH = 61
 
     def _track_call(self, team_key):
         self._track_call_defer('team/social_media', team_key)

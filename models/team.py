@@ -14,6 +14,8 @@ class Team(ndb.Model):
     team_number = ndb.IntegerProperty(required=True)
     name = ndb.TextProperty(indexed=False)
     nickname = ndb.StringProperty(indexed=False)
+    school_name = ndb.TextProperty(indexed=False)
+    home_cmp = ndb.StringProperty()
 
     # city, state_prov, country, and postalcode are from FIRST
     city = ndb.StringProperty()  # Equivalent to locality. From FRCAPI
@@ -83,7 +85,10 @@ class Team(ndb.Model):
 
     @property
     def nl(self):
-        return self.normalized_location
+        return None  # 2017-03-25 Normalized location too inconsistent. Completely disable for now. -fangeugene
+        # if self.normalized_location and self.normalized_location.country not in {'United States', 'Canada'}:
+        #     return False
+        # return self.normalized_location
 
     @property
     def details_url(self):

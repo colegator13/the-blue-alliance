@@ -1,18 +1,19 @@
+from consts.playoff_type import PlayoffType
 from database.dict_converters.converter_base import ConverterBase
+from database.dict_converters.district_converter import DistrictConverter
 
 
 class EventConverter(ConverterBase):
     SUBVERSIONS = {  # Increment every time a change to the dict is made
-        3: 0,
+        3: 5,
     }
 
     @classmethod
-    def convert(cls, events, dict_version):
+    def _convert(cls, events, dict_version):
         CONVERTERS = {
             3: cls.eventsConverter_v3,
         }
-        converted_events = CONVERTERS[dict_version](cls._listify(events))
-        return cls._delistify(converted_events)
+        return CONVERTERS[dict_version](events)
 
     @classmethod
     def eventsConverter_v3(cls, events):
@@ -21,6 +22,7 @@ class EventConverter(ConverterBase):
 
     @classmethod
     def eventConverter_v3(cls, event):
+        district_future = event.district_key.get_async() if event.district_key else None
         event_dict = {
             'key': event.key.id(),
             'name': event.name,
@@ -28,8 +30,11 @@ class EventConverter(ConverterBase):
             'event_code': event.event_short,
             'event_type': event.event_type_enum,
             'event_type_string': event.event_type_str,
-            'district_type': event.event_district_enum,
-            'district_type_string': event.event_district_str,
+            'parent_event_key': event.parent_event.id() if event.parent_event else None,
+            'playoff_type': event.playoff_type,
+            'playoff_type_string': PlayoffType.type_names.get(event.playoff_type),
+            'district': DistrictConverter.convert(district_future.get_result(), 3) if district_future else None,
+            'division_keys': [key.id() for key in event.divisions],
             'first_event_id': event.first_eid,
             'year': event.year,
             'timezone': event.timezone_id,

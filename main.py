@@ -4,7 +4,9 @@ from webapp2_extras.routes import RedirectRoute
 
 import tba_config
 
-from controllers.account_controller import AccountEdit, AccountLoginRequired, AccountLogin, AccountLogout, AccountOverview, AccountRegister, MyTBAController, myTBAAddHotMatchesController, MyTBAEventController, MyTBAMatchController, MyTBATeamController
+from controllers.account_controller import AccountEdit, AccountLoginRequired, AccountLogin, AccountLogout, \
+AccountOverview, AccountRegister, MyTBAController, myTBAAddHotMatchesController, MyTBAEventController, \
+MyTBAMatchController, MyTBATeamController, AccountAPIReadKeyAdd, AccountAPIReadKeyDelete
 from controllers.advanced_search_controller import AdvancedSearchController
 from controllers.ajax_controller import AccountInfoHandler, AccountRegisterFCMToken, AccountFavoritesHandler, AccountFavoritesAddHandler, AccountFavoritesDeleteHandler, \
       YouTubePlaylistHandler, AllowedApiWriteEventsHandler
@@ -20,6 +22,8 @@ from controllers.main_controller import TwoChampsHandler, ContactHandler, Hashta
     WebcastsHandler, RecordHandler, ApiDocumentationHandler, ApiWriteHandler, MatchInputHandler, WebhookDocumentationHandler, \
       AddDataHandler
 from controllers.match_controller import MatchDetail
+from controllers.match_suggestion_controller import MatchSuggestionHandler
+from controllers.match_timeline_controller import MatchTimelineHandler
 from controllers.mytba_controller import MyTBALiveController
 from controllers.nearby_controller import NearbyController
 from controllers.nightbot_controller import NightbotTeamNextmatchHandler, NightbotTeamStatuskHandler
@@ -29,6 +33,9 @@ from controllers.suggestions.suggest_apiwrite_controller import SuggestApiWriteC
 from controllers.suggestions.suggest_apiwrite_review_controller import \
       SuggestApiWriteReviewController
 from controllers.suggestions.suggest_designs_review_controller import SuggestDesignsReviewController
+from controllers.suggestions.suggest_event_media_controller import SuggestEventMediaController
+from controllers.suggestions.suggest_event_media_review_controller import \
+      SuggestEventMediaReviewController
 from controllers.suggestions.suggest_match_video_controller import SuggestMatchVideoController, \
       SuggestMatchVideoPlaylistController
 from controllers.suggestions.suggest_match_video_review_controller import SuggestMatchVideoReviewController
@@ -71,6 +78,8 @@ app = webapp2.WSGIApplication([
       RedirectRoute(r'/2champs', TwoChampsHandler, '2champs', strict_slash=True),
       RedirectRoute(r'/about', AboutHandler, 'about', strict_slash=True),
       RedirectRoute(r'/account', AccountOverview, 'account-overview', strict_slash=True),
+      RedirectRoute(r'/account/api/read_key_add', AccountAPIReadKeyAdd, 'account-api-read-key-add', strict_slash=True),
+      RedirectRoute(r'/account/api/read_key_delete', AccountAPIReadKeyDelete, 'account-api-read-key-delete', strict_slash=True),
       RedirectRoute(r'/account/edit', AccountEdit, 'account-edit', strict_slash=True),
       RedirectRoute(r'/account/register', AccountRegister, 'account-register', strict_slash=True),
       RedirectRoute(r'/account/login_required', AccountLoginRequired, 'account-login-required', strict_slash=True),
@@ -103,6 +112,8 @@ app = webapp2.WSGIApplication([
       RedirectRoute(r'/login', AccountLogin, 'account-login', strict_slash=True),
       RedirectRoute(r'/logout', AccountLogout, 'account-logout', strict_slash=True),
       RedirectRoute(r'/match/<match_key>', MatchDetail, 'match-detail', strict_slash=True),
+      RedirectRoute(r'/match_suggestion', MatchSuggestionHandler, 'match-suggestion', strict_slash=True),
+      RedirectRoute(r'/match_timeline', MatchTimelineHandler, 'match-timeline', strict_slash=True),
       RedirectRoute(r'/matchinput', MatchInputHandler, 'match-input', strict_slash=True),
       RedirectRoute(r'/mytba', MyTBALiveController, 'mytba-live', strict_slash=True),
       RedirectRoute(r'/nearby', NearbyController, 'nearby', strict_slash=True),
@@ -111,16 +122,18 @@ app = webapp2.WSGIApplication([
       RedirectRoute(r'/opr', OprHandler, 'opr', strict_slash=True),
       RedirectRoute(r'/predictions', PredictionsHandler, 'predictions', strict_slash=True),
       RedirectRoute(r'/record', RecordHandler, 'record', strict_slash=True),
-      RedirectRoute(r'/request/apiwrite/', SuggestApiWriteController, 'request-apiwrite', strict_slash=True),
+      RedirectRoute(r'/request/apiwrite', SuggestApiWriteController, 'request-apiwrite', strict_slash=True),
       RedirectRoute(r'/search', SearchHandler, 'search', strict_slash=True),
       RedirectRoute(r'/suggest/apiwrite/review', SuggestApiWriteReviewController, 'request-apiwrite-review', strict_slash=True),
       RedirectRoute(r'/suggest/cad/review', SuggestDesignsReviewController, 'suggest-designs-review', strict_slash=True),
       RedirectRoute(r'/suggest/event/webcast', SuggestEventWebcastController, 'suggest-event-webcast', strict_slash=True),
       RedirectRoute(r'/suggest/event/webcast/review', SuggestEventWebcastReviewController, 'suggest-event-webcast-review', strict_slash=True),
+      RedirectRoute(r'/suggest/event/media', SuggestEventMediaController, 'suggest-event-media', strict_slash=True),
       RedirectRoute(r'/suggest/event/video', SuggestMatchVideoPlaylistController, 'suggest-matches-playlist', strict_slash=True),
       RedirectRoute(r'/suggest/match/video', SuggestMatchVideoController, 'suggest-match-video', strict_slash=True),
       RedirectRoute(r'/suggest/match/video/review', SuggestMatchVideoReviewController, 'suggest-match-video-review', strict_slash=True),
       RedirectRoute(r'/suggest/review', SuggestReviewHomeController, 'suggest-review-home', strict_slash=True),
+      RedirectRoute(r'/suggest/event/media/review', SuggestEventMediaReviewController, 'suggest-event-media-review', strict_slash=True),
       RedirectRoute(r'/suggest/team/media', SuggestTeamMediaController, 'suggest-team-media', strict_slash=True),
       RedirectRoute(r'/suggest/team/social_media', SuggestTeamSocialMediaController, 'suggest-team-social-media', strict_slash=True),
       RedirectRoute(r'/suggest/team/social/review', SuggestSocialMediaReviewController, 'suggest-team-social-media-review', strict_slash=True),
@@ -146,7 +159,7 @@ app = webapp2.WSGIApplication([
       RedirectRoute(r'/_/account/favorites/add', AccountFavoritesAddHandler, 'ajax-account-favorites-add', strict_slash=True),
       RedirectRoute(r'/_/account/favorites/delete', AccountFavoritesDeleteHandler, 'ajax-account-favorites-delete', strict_slash=True),
       RedirectRoute(r'/_/live-event/<event_key>/<timestamp:[0-9]+>', LiveEventHandler, 'ajax-live-event', strict_slash=True),
-      RedirectRoute(r'/_/nightbot/nextmatch/<team_number:[0-9]+>', NightbotTeamNextmatchHandler, 'nightbot-team-nextmatch', strict_slash=True),
+      RedirectRoute(r'/_/nightbot/nextmatch/<arg_str:(.*)>', NightbotTeamNextmatchHandler, 'nightbot-team-nextmatch', strict_slash=True),
       RedirectRoute(r'/_/nightbot/status/<team_number:[0-9]+>', NightbotTeamStatuskHandler, 'nightbot-team-status', strict_slash=True),
       RedirectRoute(r'/_/typeahead/<search_key>', TypeaheadHandler, 'ajax-typeahead', strict_slash=True),
       RedirectRoute(r'/_/webcast/<event_key>/<webcast_number>', WebcastHandler, 'ajax-webcast', strict_slash=True),

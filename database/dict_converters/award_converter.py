@@ -3,11 +3,11 @@ from database.dict_converters.converter_base import ConverterBase
 
 class AwardConverter(ConverterBase):
     SUBVERSIONS = {  # Increment every time a change to the dict is made
-        3: 0,
+        3: 3,
     }
 
     @classmethod
-    def convert(cls, awards, dict_version):
+    def _convert(cls, awards, dict_version):
         AWARD_CONVERTERS = {
             3: cls.awardsConverter_v3,
         }
@@ -24,7 +24,7 @@ class AwardConverter(ConverterBase):
         for recipient in award.recipient_list:
             recipient_list_fixed.append({
                 'awardee': recipient['awardee'],
-                'team_key': 'frc{}'.format(recipient['team_number']),
+                'team_key': 'frc{}'.format(recipient['team_number']) if recipient['team_number'] else None,
             })
         return {
             'name': award.name_str,

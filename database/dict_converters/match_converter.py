@@ -4,16 +4,15 @@ from database.dict_converters.converter_base import ConverterBase
 
 class MatchConverter(ConverterBase):
     SUBVERSIONS = {  # Increment every time a change to the dict is made
-        3: 0,
+        3: 5,
     }
 
     @classmethod
-    def convert(cls, matches, dict_version):
+    def _convert(cls, matches, dict_version):
         CONVERTERS = {
             3: cls.matchesConverter_v3,
         }
-        converted_matches = CONVERTERS[dict_version](cls._listify(matches))
-        return cls._delistify(converted_matches)
+        return CONVERTERS[dict_version](matches)
 
     @classmethod
     def matchesConverter_v3(cls, matches):
@@ -21,6 +20,10 @@ class MatchConverter(ConverterBase):
 
     @classmethod
     def matchConverter_v3(cls, match):
+        for alliance in ['red', 'blue']:
+            match.alliances[alliance]['team_keys'] = match.alliances[alliance].pop('teams')
+            match.alliances[alliance]['surrogate_team_keys'] = match.alliances[alliance].pop('surrogates')
+
         match_dict = {
             'key': match.key.id(),
             'event_key': match.event.id(),
@@ -40,5 +43,13 @@ class MatchConverter(ConverterBase):
             match_dict['actual_time'] = int(time.mktime(match.actual_time.timetuple()))
         else:
             match_dict['actual_time'] = None
+        if match.predicted_time is not None:
+            match_dict['predicted_time'] = int(time.mktime(match.predicted_time.timetuple()))
+        else:
+            match_dict['predicted_time'] = None
+        if match.post_result_time is not None:
+            match_dict['post_result_time'] = int(time.mktime(match.post_result_time.timetuple()))
+        else:
+            match_dict['post_result_time'] = None
 
         return match_dict

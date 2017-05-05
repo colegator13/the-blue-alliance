@@ -53,6 +53,7 @@ class ChatSidebar extends React.Component {
       width: this.props.muiTheme.layout.chatPanelWidth,
       background: '#EFEEF1',
       display: this.props.enabled ? null : 'none',
+      zIndex: 1000,
     }
 
     const chatEmbedContainerStyle = {
@@ -101,7 +102,7 @@ class ChatSidebar extends React.Component {
     const currentChat = this.props.chats[this.props.currentChat]
     let currentChatName = 'UNKNOWN'
     if (currentChat) {
-      currentChatName = currentChat.name
+      currentChatName = `${currentChat.name} Chat`
     }
 
     let content

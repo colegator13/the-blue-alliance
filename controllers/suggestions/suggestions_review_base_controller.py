@@ -26,6 +26,9 @@ class SuggestionsReviewBaseController(LoggedInHandler):
         """
         raise NotImplementedError("Subclasses should implement create_target_model")
 
+    def was_create_success(self, ret):
+        return ret
+
     @ndb.transactional(xg=True)
     def _process_accepted(self, accept_key):
         """
@@ -43,17 +46,16 @@ class SuggestionsReviewBaseController(LoggedInHandler):
         if suggestion.review_state != Suggestion.REVIEW_PENDING:
             return
 
-        # Mark Suggestion as accepted
-        suggestion.review_state = Suggestion.REVIEW_ACCEPTED
-        suggestion.reviewer = self.user_bundle.account.key
-        suggestion.reviewed_at = datetime.datetime.now()
-
         # Do all DB writes
         ret = self.create_target_model(suggestion)
-        suggestion.put()
+        if self.was_create_success(ret):
+            # Mark Suggestion as accepted
+            suggestion.review_state = Suggestion.REVIEW_ACCEPTED
+            suggestion.reviewer = self.user_bundle.account.key
+            suggestion.reviewed_at = datetime.datetime.now()
+            suggestion.put()
         return ret
 
-    @ndb.transactional(xg=True)
     def _process_rejected(self, reject_keys):
         """
         Do everything we need to reject a batch of suggestions
@@ -66,9 +68,12 @@ class SuggestionsReviewBaseController(LoggedInHandler):
         rejected_suggestions = map(lambda a: a.get_result(), rejected_suggestion_futures)
 
         for suggestion in rejected_suggestions:
-            if suggestion.review_state == Suggestion.REVIEW_PENDING:
-                suggestion.review_state = Suggestion.REVIEW_REJECTED
-                suggestion.reviewer = self.user_bundle.account.key
-                suggestion.reviewed_at = datetime.datetime.now()
+            self._reject_suggestion(suggestion)
 
-        ndb.put_multi(rejected_suggestions)
+    @ndb.transactional(xg=True)
+    def _reject_suggestion(self, suggestion):
+        if suggestion.review_state == Suggestion.REVIEW_PENDING:
+            suggestion.review_state = Suggestion.REVIEW_REJECTED
+            suggestion.reviewer = self.user_bundle.account.key
+            suggestion.reviewed_at = datetime.datetime.now()
+            suggestion.put()

@@ -4,6 +4,7 @@ import traceback
 from google.appengine.api import taskqueue
 
 from helpers.cache_clearer import CacheClearer
+from helpers.firebase.firebase_pusher import FirebasePusher
 from helpers.manipulator_base import ManipulatorBase
 from helpers.notification_helper import NotificationHelper
 
@@ -44,6 +45,20 @@ class EventDetailsManipulator(ManipulatorBase):
                 logging.error("Error enqueuing district_points_calc for {}".format(event.key.id()))
                 logging.error(traceback.format_exc())
 
+            # Enqueue task to calculate event team status
+            try:
+                taskqueue.add(
+                    url='/tasks/math/do/event_team_status/{}'.format(event.key.id()),
+                    method='GET')
+            except Exception:
+                logging.error("Error enqueuing event_team_status for {}".format(event.key.id()))
+                logging.error(traceback.format_exc())
+
+            try:
+                FirebasePusher.update_event_details(event_details)
+            except Exception:
+                logging.warning("Firebase update_event_details failed!")
+
     @classmethod
     def updateMerge(self, new_event_details, old_event_details, auto_union=True):
         """
@@ -55,8 +70,10 @@ class EventDetailsManipulator(ManipulatorBase):
             'alliance_selections',
             'district_points',
             'matchstats',
+            'insights',
             'predictions',
             'rankings',
+            'rankings2',
         ]
 
         old_event_details._updated_attrs = []
